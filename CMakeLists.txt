@@ -75,7 +75,6 @@ find_package(VirtoolsSDK REQUIRED)
 configure_file(ImGuiManager.rc.in "${CMAKE_CURRENT_LIST_DIR}/ImGuiManager.rc")
 
 set(IMGUIMANAGER_PUBLIC_HDRS
-        CKImGui.h
         ImGuiManager.h
         imgui/imconfig.h
         imgui/imgui.h
@@ -103,24 +102,29 @@ set(IMGUIMANAGER_SRCS
         )
 
 add_library(ImGuiManager SHARED ${IMGUIMANAGER_SRCS} ${IMGUIMANAGER_PUBLIC_HDRS} ${IMGUIMANAGER_PRIVATE_HDRS})
-set_target_properties(ImGuiManager PROPERTIES
-        DEFINE_SYMBOL VX_API
-        VERSION ${PROJECT_VERSION}
-        )
+add_library(CKImGui STATIC CKImGui.cpp CKImGui.h)
+target_link_libraries(CKImGui PUBLIC ImGuiManager)
 
-target_include_directories(ImGuiManager
-        PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
+foreach (LIB IN ITEMS ImGuiManager CKImGui)
+    set_target_properties(${LIB} PROPERTIES
+            DEFINE_SYMBOL VX_API
+            VERSION ${PROJECT_VERSION}
+            )
 
-target_link_libraries(ImGuiManager PRIVATE CK2 VxMath)
+    target_include_directories(${LIB}
+            PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
 
-# Disable msvc unsafe warnings
-target_compile_definitions(ImGuiManager PRIVATE
-        $<$<C_COMPILER_ID:MSVC>:_CRT_SECURE_NO_WARNINGS>
-        $<$<C_COMPILER_ID:MSVC>:_CRT_NONSTDC_NO_WARNINGS>
-        $<$<C_COMPILER_ID:MSVC>:_CRT_SECURE_NO_DEPRECATE>
-        $<$<C_COMPILER_ID:MSVC>:_CRT_NONSTDC_NO_DEPRECATE>
-        )
+    target_link_libraries(${LIB} PRIVATE CK2 VxMath)
+
+    # Disable msvc unsafe warnings
+    target_compile_definitions(${LIB} PRIVATE
+            $<$<C_COMPILER_ID:MSVC>:_CRT_SECURE_NO_WARNINGS>
+            $<$<C_COMPILER_ID:MSVC>:_CRT_NONSTDC_NO_WARNINGS>
+            $<$<C_COMPILER_ID:MSVC>:_CRT_SECURE_NO_DEPRECATE>
+            $<$<C_COMPILER_ID:MSVC>:_CRT_NONSTDC_NO_DEPRECATE>
+            )
+endforeach ()
 
 configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/CMake/ImGuiManagerConfig.cmake.in"
         "${CMAKE_CURRENT_BINARY_DIR}/ImGuiManagerConfig.cmake"
@@ -137,7 +141,7 @@ install(FILES
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/ImGuiManager"
         )
 
-install(TARGETS ImGuiManager
+install(TARGETS ImGuiManager CKImGui
         EXPORT ImGuiManagerTargets
         ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
         LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
@@ -147,5 +151,5 @@ install(TARGETS ImGuiManager
 install(EXPORT "ImGuiManagerTargets"
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/ImGuiManager")
 
-install(FILES ${IMGUIMANAGER_PUBLIC_HDRS}
+install(FILES ${IMGUIMANAGER_PUBLIC_HDRS} CKImGui.h
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
