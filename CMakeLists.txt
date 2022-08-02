@@ -70,7 +70,7 @@ if (NOT VIRTOOLS_SDK_PATH)
     endif ()
 endif ()
 
-find_package(VirtoolsSDK REQUIRED)
+find_package(VirtoolsSDK REQUIRED HINTS ${VIRTOOLS_SDK_PATH})
 
 configure_file(ImGuiManager.rc.in "${CMAKE_CURRENT_LIST_DIR}/ImGuiManager.rc")
 
