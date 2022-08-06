@@ -81,6 +81,14 @@ add_compile_definitions(
         $<$<C_COMPILER_ID:MSVC>:_CRT_NONSTDC_NO_DEPRECATE>
 )
 
+if (EXISTS imgui/imconfig.h)
+    file(RENAME
+            ${CMAKE_CURRENT_LIST_DIR}/imgui/imconfig.h
+            ${CMAKE_CURRENT_LIST_DIR}/imgui/imconfig.h.bak)
+endif ()
+file(COPY ${CMAKE_CURRENT_LIST_DIR}/imconfig.h
+        DESTINATION ${CMAKE_CURRENT_LIST_DIR}/imgui)
+
 # ImGui
 add_library(ImGui SHARED
         imgui/imgui.cpp
@@ -89,7 +97,7 @@ add_library(ImGui SHARED
         imgui/imgui_tables.cpp
         imgui/imgui_widgets.cpp
         imgui/backends/imgui_impl_ck2.cpp
-        imconfig.h
+        imgui/imconfig.h
         imgui/imgui.h
         imgui/imgui_internal.h
         imgui/imstb_rectpack.h
@@ -107,6 +115,7 @@ target_compile_definitions(ImGui PRIVATE VX_API)
 
 # ImGuiManager
 add_library(ImGuiManager SHARED ImGuiManager.cpp ImGuiManager.h ImGuiManager.rc)
+target_include_directories(ImGui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/imgui ${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends)
 target_link_libraries(ImGuiManager PRIVATE ImGui CK2 VxMath)
 target_compile_definitions(ImGui PRIVATE VX_API)
 
