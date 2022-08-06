@@ -7,7 +7,7 @@
 
 #define IMGUI_MANAGER_GUID CKGUID(0x19E7A87, 0x95E7972)
 
-class ImGuiManager : public CKBaseManager {
+class ImGuiManager final : public CKBaseManager {
 public :
     explicit ImGuiManager(CKContext *context);
 
