@@ -9,11 +9,11 @@
 #include "imgui/backends/imgui_impl_ck2.h"
 
 #ifdef CK_LIB
-#define CreateNewManager				CreateNewImGuiManager
-#define RemoveManager					RemoveImGuiManager
-#define CKGetPluginInfoCount			CKGet_ImGuiManager_PluginInfoCount
-#define CKGetPluginInfo					CKGet_ImGuiManager_PluginInfo
-#define g_PluginInfo					g_ImGuiManager_PluginInfo
+#define CreateNewManager                CreateNewImGuiManager
+#define RemoveManager                   RemoveImGuiManager
+#define CKGetPluginInfoCount            CKGet_ImGuiManager_PluginInfoCount
+#define CKGetPluginInfo                 CKGet_ImGuiManager_PluginInfo
+#define g_PluginInfo                    g_ImGuiManager_PluginInfo
 #else
 #define CreateNewManager                CreateNewManager
 #define RemoveManager                   RemoveManager
