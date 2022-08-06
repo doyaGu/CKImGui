@@ -74,57 +74,46 @@ find_package(VirtoolsSDK REQUIRED HINTS ${VIRTOOLS_SDK_PATH})
 
 configure_file(ImGuiManager.rc.in "${CMAKE_CURRENT_LIST_DIR}/ImGuiManager.rc")
 
-set(IMGUIMANAGER_PUBLIC_HDRS
-        ImGuiManager.h
-        imgui/imconfig.h
-        imgui/imgui.h
-        )
+add_compile_definitions(
+        $<$<C_COMPILER_ID:MSVC>:_CRT_SECURE_NO_WARNINGS>
+        $<$<C_COMPILER_ID:MSVC>:_CRT_NONSTDC_NO_WARNINGS>
+        $<$<C_COMPILER_ID:MSVC>:_CRT_SECURE_NO_DEPRECATE>
+        $<$<C_COMPILER_ID:MSVC>:_CRT_NONSTDC_NO_DEPRECATE>
+)
 
-set(IMGUIMANAGER_PRIVATE_HDRS
-        imgui/imgui_internal.h
-        imgui/imstb_rectpack.h
-        imgui/imstb_textedit.h
-        imgui/imstb_truetype.h
-        imgui/backends/imgui_impl_ck2.h
-        )
-
-set(IMGUIMANAGER_SRCS
-        CKImGui.cpp
-        ImGuiManager.cpp
+# ImGui
+add_library(ImGui SHARED
         imgui/imgui.cpp
         imgui/imgui_draw.cpp
         imgui/imgui_demo.cpp
         imgui/imgui_tables.cpp
         imgui/imgui_widgets.cpp
         imgui/backends/imgui_impl_ck2.cpp
-
-        ImGuiManager.rc
+        imconfig.h
+        imgui/imgui.h
+        imgui/imgui_internal.h
+        imgui/imstb_rectpack.h
+        imgui/imstb_textedit.h
+        imgui/imstb_truetype.h
+        imgui/backends/imgui_impl_ck2.h
+        ImGui.rc
         )
+target_include_directories(ImGui PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/imgui>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+        )
+target_link_libraries(ImGui PRIVATE CK2 VxMath)
+target_compile_definitions(ImGui PRIVATE VX_API)
 
-add_library(ImGuiManager SHARED ${IMGUIMANAGER_SRCS} ${IMGUIMANAGER_PUBLIC_HDRS} ${IMGUIMANAGER_PRIVATE_HDRS})
+# ImGuiManager
+add_library(ImGuiManager SHARED ImGuiManager.cpp ImGuiManager.h ImGuiManager.rc)
+target_link_libraries(ImGuiManager PRIVATE ImGui CK2 VxMath)
+target_compile_definitions(ImGui PRIVATE VX_API)
+
+# CKImGui
 add_library(CKImGui STATIC CKImGui.cpp CKImGui.h)
-target_link_libraries(CKImGui PUBLIC ImGuiManager)
-
-foreach (LIB IN ITEMS ImGuiManager CKImGui)
-    set_target_properties(${LIB} PROPERTIES
-            DEFINE_SYMBOL VX_API
-            VERSION ${PROJECT_VERSION}
-            )
-
-    target_include_directories(${LIB}
-            PUBLIC $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
-
-    target_link_libraries(${LIB} PRIVATE CK2 VxMath)
-
-    # Disable msvc unsafe warnings
-    target_compile_definitions(${LIB} PRIVATE
-            $<$<C_COMPILER_ID:MSVC>:_CRT_SECURE_NO_WARNINGS>
-            $<$<C_COMPILER_ID:MSVC>:_CRT_NONSTDC_NO_WARNINGS>
-            $<$<C_COMPILER_ID:MSVC>:_CRT_SECURE_NO_DEPRECATE>
-            $<$<C_COMPILER_ID:MSVC>:_CRT_NONSTDC_NO_DEPRECATE>
-            )
-endforeach ()
+target_link_libraries(CKImGui PRIVATE CK2 VxMath)
+target_compile_definitions(CKImGui PRIVATE VX_API)
 
 configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/CMake/ImGuiManagerConfig.cmake.in"
         "${CMAKE_CURRENT_BINARY_DIR}/ImGuiManagerConfig.cmake"
@@ -141,7 +130,7 @@ install(FILES
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/ImGuiManager"
         )
 
-install(TARGETS ImGuiManager CKImGui
+install(TARGETS ImGui ImGuiManager CKImGui
         EXPORT ImGuiManagerTargets
         ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
         LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
@@ -151,5 +140,9 @@ install(TARGETS ImGuiManager CKImGui
 install(EXPORT "ImGuiManagerTargets"
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/ImGuiManager")
 
-install(FILES ${IMGUIMANAGER_PUBLIC_HDRS} CKImGui.h
+install(FILES
+        imconfig.h
+        imgui/imgui.h
+        ImGuiManager.h
+        CKImGui.h
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
