@@ -16,10 +16,10 @@ This project provides three libraries: ImGui, ImGuiManager, and CKImGui.
 With ImGuiManager, you don't have to handle the tedious procedures such as initialization and its inverse processes. Just pass the content between `NewFrame` and `EndFrame` as a callback into the function `AddToFrame`, then the expected window will be drew every frame automatically.
 
 ```cpp
-ImGuiManager *man = (ImGuiManager *) GetCKContext(0)->GetManagerByGuid(IMGUI_MANAGER_GUID);
-man->AddToFrame([]{
-    ImGui::ShowDemoWindow(nullptr);
-});
+    ImGuiManager *man = (ImGuiManager *) GetCKContext(0)->GetManagerByGuid(IMGUI_MANAGER_GUID);
+    man->AddToFrame([]{
+        ImGui::ShowDemoWindow(nullptr);
+    });
 ```
 
 ## Building

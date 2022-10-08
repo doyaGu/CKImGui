@@ -111,18 +111,15 @@ target_include_directories(ImGui PUBLIC
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         )
 target_link_libraries(ImGui PRIVATE CK2 VxMath)
-target_compile_definitions(ImGui PRIVATE VX_API)
 
 # ImGuiManager
 add_library(ImGuiManager SHARED ImGuiManager.cpp ImGuiManager.h ImGuiManager.rc)
 target_include_directories(ImGui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/imgui ${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends)
 target_link_libraries(ImGuiManager PRIVATE ImGui CK2 VxMath)
-target_compile_definitions(ImGui PRIVATE VX_API)
 
 # CKImGui
 add_library(CKImGui STATIC CKImGui.cpp CKImGui.h)
 target_link_libraries(CKImGui PRIVATE CK2 VxMath)
-target_compile_definitions(CKImGui PRIVATE VX_API)
 
 configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/CMake/ImGuiManagerConfig.cmake.in"
         "${CMAKE_CURRENT_BINARY_DIR}/ImGuiManagerConfig.cmake"
