@@ -57,7 +57,7 @@ CKERROR ImGuiManager::OnCKPostReset() {
     return CK_OK;
 }
 
-CKERROR ImGuiManager::OnPostRender(CKRenderContext *dev) {
+CKERROR ImGuiManager::OnPreRender(CKRenderContext *dev) {
     if (m_Show) {
         ImGui_ImplCK2_NewFrame();
         ImGui_ImplWin32_NewFrame();
@@ -78,7 +78,7 @@ CKERROR ImGuiManager::OnPostSpriteRender(CKRenderContext *dev) {
 
 int ImGuiManager::GetFunctionPriority(CKMANAGER_FUNCTIONS Function) {
     switch (Function) {
-        case CKMANAGER_FUNC_OnPostRender:
+        case CKMANAGER_FUNC_OnPreRender:
             return 1000;
         case CKMANAGER_FUNC_OnPostSpriteRender:
             return -1000;
@@ -92,7 +92,7 @@ CKDWORD ImGuiManager::GetValidFunctionsMask() {
     return CKMANAGER_FUNC_OnCKInit |
         CKMANAGER_FUNC_OnCKEnd |
         CKMANAGER_FUNC_OnCKPostReset |
-        CKMANAGER_FUNC_OnPostRender |
+        CKMANAGER_FUNC_OnPreRender |
         CKMANAGER_FUNC_OnPostSpriteRender;
 }
 

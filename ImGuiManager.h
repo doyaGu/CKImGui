@@ -18,7 +18,7 @@ public :
 
     CKERROR OnCKPostReset() override;
 
-    CKERROR OnPostRender(CKRenderContext *dev) override;
+    CKERROR OnPreRender(CKRenderContext *dev) override;
     CKERROR OnPostSpriteRender(CKRenderContext *dev) override;
 
     int GetFunctionPriority(CKMANAGER_FUNCTIONS Function) override;
