@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 
-project(ImGuiManager VERSION 0.1.0)
+project(ImGuiManager VERSION 0.2.0)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED NO)
@@ -72,83 +72,74 @@ endif ()
 
 find_package(VirtoolsSDK REQUIRED HINTS ${VIRTOOLS_SDK_PATH})
 
-configure_file(ImGuiManager.rc.in "${CMAKE_CURRENT_LIST_DIR}/ImGuiManager.rc")
+# MinHook
+add_subdirectory(minhook EXCLUDE_FROM_ALL)
+set_target_properties(minhook PROPERTIES FOLDER "Dependencies")
 
 add_compile_definitions(
         $<$<C_COMPILER_ID:MSVC>:_CRT_SECURE_NO_WARNINGS>
         $<$<C_COMPILER_ID:MSVC>:_CRT_NONSTDC_NO_WARNINGS>
         $<$<C_COMPILER_ID:MSVC>:_CRT_SECURE_NO_DEPRECATE>
         $<$<C_COMPILER_ID:MSVC>:_CRT_NONSTDC_NO_DEPRECATE>
-)
+		)
 
-if (EXISTS imgui/imconfig.h)
-    file(RENAME
-            ${CMAKE_CURRENT_LIST_DIR}/imgui/imconfig.h
-            ${CMAKE_CURRENT_LIST_DIR}/imgui/imconfig.h.bak)
-endif ()
-file(COPY ${CMAKE_CURRENT_LIST_DIR}/imconfig.h
-        DESTINATION ${CMAKE_CURRENT_LIST_DIR}/imgui)
+configure_file(ImGuiManager.rc.in "${CMAKE_CURRENT_LIST_DIR}/ImGuiManager.rc")
 
-# ImGui
-add_library(ImGui SHARED
-        imgui/imgui.cpp
-        imgui/imgui_draw.cpp
-        imgui/imgui_demo.cpp
-        imgui/imgui_tables.cpp
-        imgui/imgui_widgets.cpp
-        imgui/backends/imgui_impl_ck2.cpp
-        imgui/imconfig.h
-        imgui/imgui.h
-        imgui/imgui_internal.h
-        imgui/imstb_rectpack.h
-        imgui/imstb_textedit.h
-        imgui/imstb_truetype.h
-        imgui/backends/imgui_impl_ck2.h
-        ImGui.rc
+set(IMGUI_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/imgui)
+
+set(IMGUI_HDRS
+        ${IMGUI_SOURCE_DIR}/imgui.h
+        ${IMGUI_SOURCE_DIR}/imgui_internal.h
+        ${IMGUI_SOURCE_DIR}/imstb_rectpack.h
+        ${IMGUI_SOURCE_DIR}/imstb_textedit.h
+        ${IMGUI_SOURCE_DIR}/imstb_truetype.h
+        ${IMGUI_SOURCE_DIR}/backends/imgui_impl_win32.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/imgui_impl_ck2.h
         )
-target_include_directories(ImGui PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/imgui>
+
+set(IMGUI_SRCS
+        ${IMGUI_SOURCE_DIR}/imgui.cpp
+        ${IMGUI_SOURCE_DIR}/imgui_draw.cpp
+        ${IMGUI_SOURCE_DIR}/imgui_widgets.cpp
+        ${IMGUI_SOURCE_DIR}/imgui_demo.cpp
+        ${IMGUI_SOURCE_DIR}/imgui_tables.cpp
+        ${IMGUI_SOURCE_DIR}/backends/imgui_impl_win32.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/imgui_impl_ck2.cpp
+        )
+
+set(IMGUIMANAGER_HDRS
+        ${CMAKE_CURRENT_SOURCE_DIR}/ImGuiManager.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/ImGuiOverlay.h
+        )
+
+set(IMGUIMANAGER_SRCS
+        ${CMAKE_CURRENT_SOURCE_DIR}/Plugin.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/ImGuiManager.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/ImGuiWin32Hook.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/ImGuiFunctionTable.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/ImGuiManager.rc
+        )
+
+add_library(ImGuiManager SHARED)
+target_sources(ImGuiManager PRIVATE ${IMGUIMANAGER_SRCS} ${IMGUIMANAGER_HDRS} ${IMGUI_SRCS} ${IMGUI_HDRS})
+target_include_directories(ImGuiManager PUBLIC
+        $<BUILD_INTERFACE:${IMGUI_SOURCE_DIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         )
-target_link_libraries(ImGui PRIVATE CK2 VxMath)
+target_link_libraries(ImGuiManager PRIVATE CK2 VxMath minhook)
 
-# ImGuiManager
-add_library(ImGuiManager SHARED ImGuiManager.cpp ImGuiManager.h ImGuiManager.rc)
-target_include_directories(ImGui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/imgui ${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends)
-target_link_libraries(ImGuiManager PRIVATE ImGui CK2 VxMath)
-
-# CKImGui
-add_library(CKImGui STATIC CKImGui.cpp CKImGui.h)
-target_link_libraries(CKImGui PRIVATE CK2 VxMath)
-
-configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/CMake/ImGuiManagerConfig.cmake.in"
-        "${CMAKE_CURRENT_BINARY_DIR}/ImGuiManagerConfig.cmake"
-        INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/ImGuiManager"
-        )
-
-write_basic_package_version_file(
-        "${CMAKE_CURRENT_BINARY_DIR}/ImGuiManagerConfigVersion.cmake"
-        COMPATIBILITY SameMinorVersion
-)
-
-install(FILES
-        "${CMAKE_CURRENT_BINARY_DIR}/ImGuiManagerConfig.cmake"
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/ImGuiManager"
-        )
-
-install(TARGETS ImGui ImGuiManager CKImGui
-        EXPORT ImGuiManagerTargets
-        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-        )
-
-install(EXPORT "ImGuiManagerTargets"
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/ImGuiManager")
-
-install(FILES
-        imconfig.h
-        imgui/imgui.h
-        ImGuiManager.h
-        CKImGui.h
-        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+if (NOT SKIP_INSTALL_ALL)
+	install(TARGETS ImGuiManager
+			RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/Managers
+			)
+		
+	if (NOT SKIP_INSTALL_HEADERS)
+		install(FILES
+				${IMGUI_SOURCE_DIR}/imgui.h
+				${CMAKE_CURRENT_SOURCE_DIR}/ImGuiManager.h
+				${CMAKE_CURRENT_SOURCE_DIR}/ImGuiOverlay.h
+				DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+	endif ()	
+endif ()
+	

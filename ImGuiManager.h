@@ -1,11 +1,12 @@
-#ifndef NEMO2_IMGUIMANAGER_H
-#define NEMO2_IMGUIMANAGER_H
-
-#include <functional>
+#ifndef IMGUIMANAGER_H
+#define IMGUIMANAGER_H
 
 #include "CKBaseManager.h"
+#include "CKContext.h"
 
 #define IMGUI_MANAGER_GUID CKGUID(0x19E7A87, 0x95E7972)
+
+struct ImGuiFunctionTable;
 
 class ImGuiManager final : public CKBaseManager {
 public :
@@ -16,41 +17,25 @@ public :
     CKERROR OnCKEnd() override;
 
     CKERROR OnCKPostReset() override;
-    CKERROR PreProcess() override;
 
     CKERROR OnPostRender(CKRenderContext *dev) override;
     CKERROR OnPostSpriteRender(CKRenderContext *dev) override;
 
-    CKDWORD GetValidFunctionsMask() override {
-        return CKMANAGER_FUNC_OnCKInit |
-               CKMANAGER_FUNC_OnCKEnd |
-               CKMANAGER_FUNC_OnCKPostReset |
-               CKMANAGER_FUNC_PreProcess |
-               CKMANAGER_FUNC_OnPostRender |
-               CKMANAGER_FUNC_OnPostSpriteRender;
+    int GetFunctionPriority(CKMANAGER_FUNCTIONS Function) override;
+
+    CKDWORD GetValidFunctionsMask() override;
+
+    virtual void Show(bool show = true);
+
+    virtual const ImGuiFunctionTable *GetImGuiFunctionTable(unsigned int version, unsigned int reserved);
+
+    static ImGuiManager *GetManager(CKContext *context) {
+        return (ImGuiManager *)context->GetManagerByGuid(IMGUI_MANAGER_GUID);
     }
-
-    bool IsInitialized() const {
-        return m_Initialized;
-    }
-
-    void Show(bool show = true) {
-        m_Show = show;
-    }
-
-    void DrawOnTopMost(bool topmost) {
-        m_DrawOnTopMost = topmost;
-    }
-
-    virtual void AddToFrame(std::function<void()> callback);
-    virtual bool RemoveFromFrame(std::function<void()> &callback);
-
-    static const char *Name;
 
 private:
     bool m_Initialized = false;
-    bool m_Show = true;
-    bool m_DrawOnTopMost = true;
+    bool m_Show = false;
 };
 
-#endif // NEMO2_IMGUIMANAGER_H
+#endif // IMGUIMANAGER_H
