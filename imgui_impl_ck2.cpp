@@ -212,20 +212,17 @@ bool ImGui_ImplCK2_CreateFontsTexture()
 
     // Upload texture to graphics system
     // (Bilinear sampling is required by default. Set 'io.Fonts->Flags |= ImFontAtlasFlags_NoBakedLines' or 'style.AntiAliasedLinesUseTex = false' to allow point/nearest sampling)
-    CKTexture *texture = (CKTexture *)context->CreateObject(CKCID_TEXTURE, "ImGuiFontsTexture");
+    CKTexture *texture = (CKTexture *)context->CreateObject(CKCID_TEXTURE, "ImGuiFontsTexture", CK_OBJECTCREATION_RENAME);
     if (texture == NULL)
-    {
         return false;
-    }
     texture->Create(width, height, 32);
 
     VxImageDescEx vxTexDesc;
     texture->GetSystemTextureDesc(vxTexDesc);
     vxTexDesc.Image = texture->LockSurfacePtr();
     if (vxTexDesc.Image)
-    {
         memcpy(vxTexDesc.Image, pixels, width * height * 4);
-    }
+
     texture->ReleaseSurfacePtr();
 
     // Store our identifier
@@ -240,7 +237,7 @@ void ImGui_ImplCK2_DestroyFontsTexture()
     ImGui_ImplCK2_Data *bd = ImGui_ImplCK2_GetBackendData();
     if (bd->FontTexture)
     {
-        io.Fonts->SetTexID(0);
+        io.Fonts->SetTexID(NULL);
         bd->FontTexture = NULL;
     }
 }
