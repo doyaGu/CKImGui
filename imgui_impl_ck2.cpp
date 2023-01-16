@@ -85,9 +85,6 @@ bool ImGui_ImplCK2_Init(CKContext *context)
 
     bd->Context = context;
 
-    // Set platform dependent data in viewport
-    ImGui::GetMainViewport()->PlatformHandleRaw = (void *)context->GetPlayerRenderContext()->GetWindowHandle();
-
     return true;
 }
 
@@ -112,14 +109,6 @@ void ImGui_ImplCK2_NewFrame()
 
     if (!bd->FontTexture)
         ImGui_ImplCK2_CreateDeviceObjects();
-
-    // Setup display size (every frame to accommodate for window resizing)
-    VxRect rect;
-    bd->Context->GetPlayerRenderContext()->GetWindowRect(rect, TRUE);
-    io.DisplaySize = ImVec2((float)(rect.right - rect.left), (float)(rect.bottom - rect.top));
-
-    // Setup time step
-    io.DeltaTime = bd->Context->GetTimeManager()->GetLastDeltaTime() / 1000.0f;
 }
 
 // Render function.
