@@ -85,6 +85,8 @@ extern "C" BOOL WINAPI HookGetMessageA(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMi
 }
 
 bool ImGuiWin32InstallHooks() {
+    if (MH_Initialize() != MH_OK)
+        return false;
     if (MH_CreateHookApi(L"user32", "PeekMessageA", (LPVOID) &HookPeekMessageA, (LPVOID *) &lpfnPeekMessageA) != MH_OK ||
         MH_EnableHook((LPVOID) &PeekMessageA) != MH_OK) {
         return false;
@@ -100,6 +102,8 @@ bool ImGuiWin32UninstallHooks() {
     if (MH_DisableHook((LPVOID) &PeekMessageA) != MH_OK)
         return false;
     if (MH_DisableHook((LPVOID) &GetMessageA) != MH_OK)
+        return false;
+    if (MH_Uninitialize() != MH_OK)
         return false;
     return true;
 }
