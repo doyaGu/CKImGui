@@ -20,12 +20,12 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "CompanyName", "Kakuty"
-            VALUE "FileDescription", "ImGui Manager for Virtools"
+            VALUE "FileDescription", "ImGui for Virtools"
             VALUE "FileVersion", "${PROJECT_VERSION}"
-            VALUE "InternalName", "ImGuiManager.dll"
-            VALUE "LegalCopyright", "Copyright (C) 2022"
-            VALUE "OriginalFilename", "ImGuiManager.dll"
-            VALUE "ProductName", "ImGui Manager"
+            VALUE "InternalName", "ImGui.dll"
+            VALUE "LegalCopyright", "Copyright (C) 2023"
+            VALUE "OriginalFilename", "ImGui.dll"
+            VALUE "ProductName", "ImGui"
             VALUE "ProductVersion", "${PROJECT_VERSION}"
         END
     END

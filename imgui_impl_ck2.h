@@ -16,7 +16,11 @@ class CKContext;
 IMGUI_IMPL_API bool     ImGui_ImplCK2_Init(CKContext *context);
 IMGUI_IMPL_API void     ImGui_ImplCK2_Shutdown();
 IMGUI_IMPL_API void     ImGui_ImplCK2_NewFrame();
-IMGUI_IMPL_API void     ImGui_ImplCK2_RenderDrawData(ImDrawData* draw_data);
+IMGUI_IMPL_API void     ImGui_ImplCK2_RenderDrawData(ImDrawData *draw_data);
+
+#if 0
+extern IMGUI_IMPL_API LRESULT ImGui_ImplCK2_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+#endif
 
 // Use if you want to reset your rendering device without losing Dear ImGui state.
 IMGUI_IMPL_API bool     ImGui_ImplCK2_CreateFontsTexture();
