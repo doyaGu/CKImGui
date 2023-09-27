@@ -62,7 +62,7 @@ set(IMGUI_HEADERS
         ${IMGUI_SOURCE_DIR}/imstb_truetype.h
         ${IMGUI_SOURCE_DIR}/backends/imgui_impl_win32.h
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui_impl_ck2.h
-        )
+)
 
 set(IMGUI_SOURCES
         ${IMGUI_SOURCE_DIR}/imgui.cpp
@@ -72,24 +72,24 @@ set(IMGUI_SOURCES
         ${IMGUI_SOURCE_DIR}/imgui_tables.cpp
         ${IMGUI_SOURCE_DIR}/backends/imgui_impl_win32.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/imgui_impl_ck2.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/Handler.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/ImGui.rc
-        )
+)
 
 add_library(ImGui SHARED)
-target_sources(ImGui PRIVATE ${IMGUI_SOURCES} ${IMGUI_HEADERS})
+target_sources(ImGui PRIVATE
+        Plugin.cpp
+        ImGuiManager.cpp
+        ImGuiManager.h
+        ${IMGUI_SOURCES}
+        ${IMGUI_HEADERS}
+)
 target_include_directories(ImGui PUBLIC
         $<BUILD_INTERFACE:${IMGUI_SOURCE_DIR}>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-        )
+)
 target_link_libraries(ImGui PRIVATE CK2 VxMath)
 target_compile_definitions(ImGui PRIVATE IMGUI_EXPORT)
-set_target_properties(ImGui PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin
-        ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib
-        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib
-        )
 
 add_custom_command(
         TARGET ImGui PRE_BUILD
@@ -101,7 +101,7 @@ if (NOT SKIP_INSTALL_ALL)
     configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/CMake/ImGuiConfig.cmake.in"
             "${CMAKE_CURRENT_BINARY_DIR}/ImGuiConfig.cmake"
             INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/ImGui"
-            )
+    )
 
     write_basic_package_version_file(
             "${CMAKE_CURRENT_BINARY_DIR}/ImGuiConfigVersion.cmake"
@@ -111,14 +111,14 @@ if (NOT SKIP_INSTALL_ALL)
     install(FILES
             "${CMAKE_CURRENT_BINARY_DIR}/ImGuiConfig.cmake"
             DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/ImGui"
-            )
+    )
 
     install(TARGETS ImGui
             EXPORT ImGuiTargets
             ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
             LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
             RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-            )
+    )
 
     install(EXPORT ImGuiTargets
             DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/ImGui")
