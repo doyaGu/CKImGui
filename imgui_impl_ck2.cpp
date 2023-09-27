@@ -17,8 +17,8 @@
 // Virtools
 #include "CKContext.h"
 #include "CKRenderContext.h"
-#include "CKRasterizer.h"
 #include "CKTexture.h"
+//#include "CKRasterizer.h"
 
 // CK2 data
 struct ImGui_ImplCK2_Data
@@ -81,8 +81,8 @@ static void ImGui_ImplCK2_SetupRenderState(ImDrawData* draw_data)
 
     dev->SetTextureStageState(CKRST_TSS_STAGEBLEND, 0, 1);
 
-    CKRasterizerContext* rst = dev->GetRasterizerContext();
-    rst->SetTransformMatrix(VXMATRIX_TEXTURE0, VxMatrix::Identity());
+//    CKRasterizerContext *rst = dev->GetRasterizerContext();
+//    rst->SetTransformMatrix(VXMATRIX_TEXTURE0, VxMatrix::Identity());
 
     dev->SetTextureStageState(CKRST_TSS_MINFILTER, VXTEXTUREFILTER_LINEAR);
     dev->SetTextureStageState(CKRST_TSS_MAGFILTER, VXTEXTUREFILTER_LINEAR);
