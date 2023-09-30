@@ -16,7 +16,7 @@ public :
     CKERROR PreClearAll() override;
     CKERROR OnCKPostReset() override;
 
-    CKERROR PreProcess() override;
+    CKERROR OnPreRender(CKRenderContext *dev) override;
     CKERROR OnPostSpriteRender(CKRenderContext *dev) override;
 
     CKDWORD GetValidFunctionsMask() override;
@@ -28,6 +28,7 @@ public :
 private:
     bool m_Created = false;
     bool m_Initialized = false;
+    bool m_Render = false;
 };
 
 #endif // IMGUIMANAGER_H
