@@ -251,7 +251,7 @@ bool ImGui_ImplCK2_CreateFontsTexture()
     CKTexture *texture = (CKTexture *)context->CreateObject(CKCID_TEXTURE, "ImGuiFonts", CK_OBJECTCREATION_RENAME);
     if (texture == NULL)
         return false;
-    texture->Create(width, height, bytes_per_pixel);
+    texture->Create(width, height, bytes_per_pixel * 8);
 
     VxImageDescEx vxTexDesc;
     texture->GetSystemTextureDesc(vxTexDesc);
