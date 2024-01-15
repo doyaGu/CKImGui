@@ -2,6 +2,7 @@
 
 // Implemented features:
 //  [X] Renderer: User texture binding.
+//  [X] Renderer: Large meshes support (64k+ vertices) with 16-bit indices.
 
 // You can use unmodified imgui_impl_* files in your project. See examples/ folder for examples of using this.
 // Prefer including the entire imgui/ repository into your project (either as a copy or as a submodule), and only build the backends you need.
@@ -18,7 +19,7 @@
 #include "CKContext.h"
 #include "CKRenderContext.h"
 #include "CKTexture.h"
-//#include "CKRasterizer.h"
+#include "CKMaterial.h"
 
 // CK2 data
 struct ImGui_ImplCK2_Data
@@ -43,7 +44,7 @@ static ImGui_ImplCK2_Data *ImGui_ImplCK2_GetBackendData()
     return ImGui::GetCurrentContext() ? (ImGui_ImplCK2_Data *)ImGui::GetIO().BackendRendererUserData : NULL;
 }
 
-static void ImGui_ImplCK2_SetupRenderState(ImDrawData* draw_data)
+static void ImGui_ImplCK2_SetupRenderState(ImDrawData *draw_data)
 {
     ImGui_ImplCK2_Data *bd = ImGui_ImplCK2_GetBackendData();
     CKRenderContext *dev = bd->RenderContext;
@@ -81,29 +82,8 @@ static void ImGui_ImplCK2_SetupRenderState(ImDrawData* draw_data)
 
     dev->SetTextureStageState(CKRST_TSS_STAGEBLEND, 0, 1);
 
-//    CKRasterizerContext *rst = dev->GetRasterizerContext();
-//    rst->SetTransformMatrix(VXMATRIX_TEXTURE0, VxMatrix::Identity());
-
     dev->SetTextureStageState(CKRST_TSS_MINFILTER, VXTEXTUREFILTER_LINEAR);
     dev->SetTextureStageState(CKRST_TSS_MAGFILTER, VXTEXTUREFILTER_LINEAR);
-
-    // Setup orthographic projection matrix
-    {
-        float l = draw_data->DisplayPos.x + 0.5f;
-        float r = draw_data->DisplayPos.x + draw_data->DisplaySize.x + 0.5f;
-        float t = draw_data->DisplayPos.y + 0.5f;
-        float b = draw_data->DisplayPos.y + draw_data->DisplaySize.y + 0.5f;
-
-        VxMatrix mat_projection;
-        mat_projection[0] = {2.0f/(r - l), 0.0f, 0.0f, 0.0f};
-        mat_projection[1] = {0.0f, 2.0f/(t - b), 0.0f, 0.0f};
-        mat_projection[2] = {0.0f, 0.0f, 0.5f, 0.0f};
-        mat_projection[3] = {(l + r) / (l - r), (t + b) / (b - t), 0.5f, 1.0f};
-
-        dev->SetWorldTransformationMatrix(VxMatrix::Identity());
-        dev->SetViewTransformationMatrix(VxMatrix::Identity());
-        dev->SetProjectionTransformationMatrix(VxMatrix::Identity());
-    }
 }
 
 // Render function.
@@ -118,11 +98,6 @@ void ImGui_ImplCK2_RenderDrawData(ImDrawData *draw_data)
     ImGui_ImplCK2_Data *bd = ImGui_ImplCK2_GetBackendData();
     CKRenderContext *dev = bd->RenderContext;
 
-    // Backup the transform matrices
-    VxMatrix last_world = dev->GetWorldTransformationMatrix();
-    VxMatrix last_view = dev->GetViewTransformationMatrix();
-    VxMatrix last_projection = dev->GetProjectionTransformationMatrix();
-
     // Setup desired render state
     ImGui_ImplCK2_SetupRenderState(draw_data);
 
@@ -134,33 +109,35 @@ void ImGui_ImplCK2_RenderDrawData(ImDrawData *draw_data)
     for (int n = 0; n < draw_data->CmdListsCount; n++)
     {
         const ImDrawList *cmd_list = draw_data->CmdLists[n];
-        const ImDrawVert* vtx_buffer = cmd_list->VtxBuffer.Data;
-        const ImDrawIdx* idx_buffer = cmd_list->IdxBuffer.Data;
+        const ImDrawVert *vtx_buffer = cmd_list->VtxBuffer.Data;
+        const ImDrawIdx *idx_buffer = cmd_list->IdxBuffer.Data;
 
-        const ImDrawVert *vtx_src = vtx_buffer;
-        int vtx_count = cmd_list->VtxBuffer.Size;
+        VxDrawPrimitiveData *data = nullptr;
+        bool oversize = cmd_list->VtxBuffer.Size >= 0xFFFF;
+        if (!oversize) {
+            const ImDrawVert *vtx_src = vtx_buffer;
+            int vtx_count = cmd_list->VtxBuffer.Size;
 
-        // Create the vertex buffer
-        VxDrawPrimitiveData *data = dev->GetDrawPrimitiveStructure((CKRST_DPFLAGS)(CKRST_DP_CL_VCT | CKRST_DP_VBUFFER), vtx_count);
+            // Create the vertex buffer
+            data = dev->GetDrawPrimitiveStructure((CKRST_DPFLAGS)(CKRST_DP_CL_VCT | CKRST_DP_VBUFFER), vtx_count);
 
-        // Copy and convert vertices, convert colors to required format.
-        XPtrStrided<VxVector4> positions(data->PositionPtr, data->PositionStride);
-        XPtrStrided<CKDWORD> colors(data->ColorPtr, data->ColorStride);
-        XPtrStrided<VxUV> uvs(data->TexCoordPtr, data->TexCoordStride);
-        for (int vtx_i = 0; vtx_i < vtx_count; vtx_i++)
-        {
-            positions->Set(vtx_src->pos.x, vtx_src->pos.y, 0.0f, 1.0f);
-            *colors = IMGUI_COL_TO_ARGB(vtx_src->col);
-            uvs->u = vtx_src->uv.x;
-            uvs->v = vtx_src->uv.y;
+            // Copy and convert vertices, convert colors to required format.
+            XPtrStrided<VxVector4> positions(data->PositionPtr, data->PositionStride);
+            XPtrStrided<CKDWORD> colors(data->ColorPtr, data->ColorStride);
+            XPtrStrided<VxUV> uvs(data->TexCoordPtr, data->TexCoordStride);
+            for (int vtx_i = 0; vtx_i < vtx_count; vtx_i++)
+            {
+                positions->Set(vtx_src->pos.x, vtx_src->pos.y, 0.0f, 1.0f);
+                *colors = IMGUI_COL_TO_ARGB(vtx_src->col);
+                uvs->u = vtx_src->uv.x;
+                uvs->v = vtx_src->uv.y;
 
-            ++positions;
-            ++colors;
-            ++uvs;
-            ++vtx_src;
+                ++positions;
+                ++colors;
+                ++uvs;
+                ++vtx_src;
+            }
         }
-
-        dev->ReleaseCurrentVB();
 
         for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
         {
@@ -179,19 +156,50 @@ void ImGui_ImplCK2_RenderDrawData(ImDrawData *draw_data)
                 // Project scissor/clipping rectangles into framebuffer space
                 ImVec2 clip_min((pcmd->ClipRect.x - clip_off.x) * clip_scale.x, (pcmd->ClipRect.y - clip_off.y) * clip_scale.y);
                 ImVec2 clip_max((pcmd->ClipRect.z - clip_off.x) * clip_scale.x, (pcmd->ClipRect.w - clip_off.y) * clip_scale.y);
+                if (clip_min.x < 0.0f) { clip_min.x = 0.0f; }
+                if (clip_min.y < 0.0f) { clip_min.y = 0.0f; }
+                if (clip_max.x > (float)fb_width) { clip_max.x = (float)fb_width; }
+                if (clip_max.y > (float)fb_height) { clip_max.y = (float)fb_height; }
                 if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
                     continue;
 
-                dev->SetTexture((CKTexture *)pcmd->GetTexID());
-                dev->DrawPrimitive(VX_TRIANGLELIST, (CKWORD *)(idx_buffer + pcmd->IdxOffset), pcmd->ElemCount, data);
+                if (oversize) {
+                    const ImDrawVert *vtx_src = vtx_buffer + pcmd->VtxOffset;
+                    int vtx_count = cmd_list->VtxBuffer.Size - pcmd->VtxOffset;
+
+                    // Create the vertex buffer
+                    data = dev->GetDrawPrimitiveStructure((CKRST_DPFLAGS)(CKRST_DP_CL_VCT | CKRST_DP_VBUFFER), vtx_count);
+
+                    // Copy and convert vertices, convert colors to required format.
+                    XPtrStrided<VxVector4> positions(data->PositionPtr, data->PositionStride);
+                    XPtrStrided<CKDWORD> colors(data->ColorPtr, data->ColorStride);
+                    XPtrStrided<VxUV> uvs(data->TexCoordPtr, data->TexCoordStride);
+                    for (int vtx_i = 0; vtx_i < vtx_count; vtx_i++)
+                    {
+                        positions->Set(vtx_src->pos.x, vtx_src->pos.y, 0.0f, 1.0f);
+                        *colors = IMGUI_COL_TO_ARGB(vtx_src->col);
+                        uvs->u = vtx_src->uv.x;
+                        uvs->v = vtx_src->uv.y;
+
+                        ++positions;
+                        ++colors;
+                        ++uvs;
+                        ++vtx_src;
+                    }
+                }
+
+                CKObject *obj = (CKObject *)pcmd->GetTexID();
+                if (obj->GetClassID() == CKCID_TEXTURE) {
+                    dev->SetTexture((CKTexture *)obj);
+                    dev->DrawPrimitive(VX_TRIANGLELIST, (CKWORD*)(idx_buffer + pcmd->IdxOffset), pcmd->ElemCount, data);
+                } else if (obj->GetClassID() == CKCID_MATERIAL) {
+                    ((CKMaterial*)obj)->SetAsCurrent(dev);
+                    dev->DrawPrimitive(VX_TRIANGLELIST, (CKWORD*)(idx_buffer + pcmd->IdxOffset), pcmd->ElemCount, data);
+                    ImGui_ImplCK2_SetupRenderState(draw_data);
+                }
             }
         }
     }
-
-    // Restore the transform matrices
-    dev->SetWorldTransformationMatrix(last_world);
-    dev->SetViewTransformationMatrix(last_view);
-    dev->SetProjectionTransformationMatrix(last_projection);
 }
 
 bool ImGui_ImplCK2_Init(CKContext *context)
@@ -203,6 +211,7 @@ bool ImGui_ImplCK2_Init(CKContext *context)
     ImGui_ImplCK2_Data *bd = IM_NEW(ImGui_ImplCK2_Data)();
     io.BackendRendererUserData = (void *)bd;
     io.BackendRendererName = "imgui_impl_ck2";
+    io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;  // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
 
     bd->Context = context;
     bd->RenderContext = context->GetPlayerRenderContext();
@@ -220,6 +229,7 @@ void ImGui_ImplCK2_Shutdown()
 
     io.BackendRendererName = NULL;
     io.BackendRendererUserData = nullptr;
+    io.BackendFlags &= ~ImGuiBackendFlags_RendererHasVtxOffset;
     IM_DELETE(bd);
 }
 
@@ -251,15 +261,17 @@ bool ImGui_ImplCK2_CreateFontsTexture()
     CKTexture *texture = (CKTexture *)context->CreateObject(CKCID_TEXTURE, "ImGuiFonts", CK_OBJECTCREATION_RENAME);
     if (texture == NULL)
         return false;
+
     texture->Create(width, height, bytes_per_pixel * 8);
 
-    VxImageDescEx vxTexDesc;
-    texture->GetSystemTextureDesc(vxTexDesc);
-    vxTexDesc.Image = texture->LockSurfacePtr();
-    if (vxTexDesc.Image)
-        memcpy(vxTexDesc.Image, pixels, width * height * bytes_per_pixel);
+    VxImageDescEx desc;
+    texture->GetSystemTextureDesc(desc);
+    desc.Image = texture->LockSurfacePtr();
+    if (desc.Image)
+        memcpy(desc.Image, pixels, width * height * bytes_per_pixel);
 
     texture->ReleaseSurfacePtr();
+    texture->SetDesiredVideoFormat(_32_ARGB8888);
 
     // Store our identifier
     io.Fonts->SetTexID((ImTextureID)(intptr_t)texture);
@@ -280,6 +292,7 @@ void ImGui_ImplCK2_DestroyFontsTexture()
     if (bd->FontTexture)
     {
         io.Fonts->SetTexID(NULL);
+        bd->Context->DestroyObject(bd->FontTexture);
         bd->FontTexture = NULL;
     }
 }

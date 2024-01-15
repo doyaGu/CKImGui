@@ -2,6 +2,7 @@
 
 // Implemented features:
 //  [X] Renderer: User texture binding.
+//  [X] Renderer: Large meshes support (64k+ vertices) with 16-bit indices.
 
 // You can use unmodified imgui_impl_* files in your project. See examples/ folder for examples of using this.
 // Prefer including the entire imgui/ repository into your project (either as a copy or as a submodule), and only build the backends you need.
@@ -17,10 +18,6 @@ IMGUI_IMPL_API bool     ImGui_ImplCK2_Init(CKContext *context);
 IMGUI_IMPL_API void     ImGui_ImplCK2_Shutdown();
 IMGUI_IMPL_API void     ImGui_ImplCK2_NewFrame();
 IMGUI_IMPL_API void     ImGui_ImplCK2_RenderDrawData(ImDrawData *draw_data);
-
-#if 0
-extern IMGUI_IMPL_API LRESULT ImGui_ImplCK2_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-#endif
 
 // Use if you want to reset your rendering device without losing Dear ImGui state.
 IMGUI_IMPL_API bool     ImGui_ImplCK2_CreateFontsTexture();
