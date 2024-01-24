@@ -262,15 +262,17 @@ bool ImGui_ImplCK2_CreateFontsTexture()
     if (texture == NULL)
         return false;
 
-    texture->Create(width, height, bytes_per_pixel * 8);
+    if (!texture->Create(width, height, bytes_per_pixel * 8)) {
+        context->DestroyObject(texture);
+        return false;
+    }
 
-    VxImageDescEx desc;
-    texture->GetSystemTextureDesc(desc);
-    desc.Image = texture->LockSurfacePtr();
-    if (desc.Image)
-        memcpy(desc.Image, pixels, width * height * bytes_per_pixel);
+    CKBYTE *ptr = texture->LockSurfacePtr();
+    if (ptr) {
+        memcpy(ptr, pixels, width * height * bytes_per_pixel);
+        texture->ReleaseSurfacePtr();
+    }
 
-    texture->ReleaseSurfacePtr();
     texture->SetDesiredVideoFormat(_32_ARGB8888);
 
     // Store our identifier
