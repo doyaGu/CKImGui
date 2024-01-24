@@ -32,9 +32,9 @@ struct ImGui_ImplCK2_Data
 };
 
 #ifdef IMGUI_USE_BGRA_PACKED_COLOR
-#define IMGUI_COL_TO_ARGB(_COL)     (_COL)
+#define IMGUI_COL_TO_ARGB(_COL) (_COL)
 #else
-#define IMGUI_COL_TO_ARGB(_COL)     (((_COL) & 0xFF00FF00) | (((_COL) & 0xFF0000) >> 16) | (((_COL) & 0xFF) << 16))
+#define IMGUI_COL_TO_ARGB(_COL) (((_COL) & 0xFF00FF00) | (((_COL) & 0xFF0000) >> 16) | (((_COL) & 0xFF) << 16))
 #endif
 
 // Backend data stored in io.BackendPlatformUserData to allow support for multiple Dear ImGui contexts
@@ -112,9 +112,10 @@ void ImGui_ImplCK2_RenderDrawData(ImDrawData *draw_data)
         const ImDrawVert *vtx_buffer = cmd_list->VtxBuffer.Data;
         const ImDrawIdx *idx_buffer = cmd_list->IdxBuffer.Data;
 
-        VxDrawPrimitiveData *data = nullptr;
+        VxDrawPrimitiveData *data = NULL;
         bool oversize = cmd_list->VtxBuffer.Size >= 0xFFFF;
-        if (!oversize) {
+        if (!oversize)
+        {
             const ImDrawVert *vtx_src = vtx_buffer;
             int vtx_count = cmd_list->VtxBuffer.Size;
 
@@ -163,7 +164,8 @@ void ImGui_ImplCK2_RenderDrawData(ImDrawData *draw_data)
                 if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
                     continue;
 
-                if (oversize) {
+                if (oversize)
+                {
                     const ImDrawVert *vtx_src = vtx_buffer + pcmd->VtxOffset;
                     int vtx_count = cmd_list->VtxBuffer.Size - pcmd->VtxOffset;
 
@@ -189,12 +191,15 @@ void ImGui_ImplCK2_RenderDrawData(ImDrawData *draw_data)
                 }
 
                 CKObject *obj = (CKObject *)pcmd->GetTexID();
-                if (obj->GetClassID() == CKCID_TEXTURE) {
+                if (obj->GetClassID() == CKCID_TEXTURE)
+                {
                     dev->SetTexture((CKTexture *)obj);
-                    dev->DrawPrimitive(VX_TRIANGLELIST, (CKWORD*)(idx_buffer + pcmd->IdxOffset), pcmd->ElemCount, data);
-                } else if (obj->GetClassID() == CKCID_MATERIAL) {
-                    ((CKMaterial*)obj)->SetAsCurrent(dev);
-                    dev->DrawPrimitive(VX_TRIANGLELIST, (CKWORD*)(idx_buffer + pcmd->IdxOffset), pcmd->ElemCount, data);
+                    dev->DrawPrimitive(VX_TRIANGLELIST, (CKWORD *)(idx_buffer + pcmd->IdxOffset), pcmd->ElemCount, data);
+                }
+                else if (obj->GetClassID() == CKCID_MATERIAL)
+                {
+                    ((CKMaterial *)obj)->SetAsCurrent(dev);
+                    dev->DrawPrimitive(VX_TRIANGLELIST, (CKWORD *)(idx_buffer + pcmd->IdxOffset), pcmd->ElemCount, data);
                     ImGui_ImplCK2_SetupRenderState(draw_data);
                 }
             }
@@ -211,7 +216,7 @@ bool ImGui_ImplCK2_Init(CKContext *context)
     ImGui_ImplCK2_Data *bd = IM_NEW(ImGui_ImplCK2_Data)();
     io.BackendRendererUserData = (void *)bd;
     io.BackendRendererName = "imgui_impl_ck2";
-    io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;  // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
+    io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset; // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
 
     bd->Context = context;
     bd->RenderContext = context->GetPlayerRenderContext();
@@ -228,7 +233,7 @@ void ImGui_ImplCK2_Shutdown()
     ImGui_ImplCK2_DestroyDeviceObjects();
 
     io.BackendRendererName = NULL;
-    io.BackendRendererUserData = nullptr;
+    io.BackendRendererUserData = NULL;
     io.BackendFlags &= ~ImGuiBackendFlags_RendererHasVtxOffset;
     IM_DELETE(bd);
 }
@@ -249,10 +254,10 @@ bool ImGui_ImplCK2_CreateFontsTexture()
 #ifndef IMGUI_USE_BGRA_PACKED_COLOR
     if (io.Fonts->TexPixelsUseColors)
     {
-        ImU32* dst_start = (ImU32*)ImGui::MemAlloc((size_t)width * height * bytes_per_pixel);
-        for (ImU32* src = (ImU32*)pixels, *dst = dst_start, *dst_end = dst_start + (size_t)width * height; dst < dst_end; src++, dst++)
+        ImU32 *dst_start = (ImU32 *)ImGui::MemAlloc((size_t)width * height * bytes_per_pixel);
+        for (ImU32 *src = (ImU32 *)pixels, *dst = dst_start, *dst_end = dst_start + (size_t)width * height; dst < dst_end; src++, dst++)
             *dst = IMGUI_COL_TO_ARGB(*src);
-        pixels = (unsigned char*)dst_start;
+        pixels = (unsigned char *)dst_start;
     }
 #endif
 
@@ -262,13 +267,15 @@ bool ImGui_ImplCK2_CreateFontsTexture()
     if (texture == NULL)
         return false;
 
-    if (!texture->Create(width, height, bytes_per_pixel * 8)) {
+    if (!texture->Create(width, height, bytes_per_pixel * 8))
+    {
         context->DestroyObject(texture);
         return false;
     }
 
     CKBYTE *ptr = texture->LockSurfacePtr();
-    if (ptr) {
+    if (ptr)
+    {
         memcpy(ptr, pixels, width * height * bytes_per_pixel);
         texture->ReleaseSurfacePtr();
     }
