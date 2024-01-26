@@ -246,28 +246,17 @@ bool ImGui_ImplCK2_CreateFontsTexture()
 
     // Build texture atlas
     unsigned char *pixels;
-    int width, height, bytes_per_pixel;
+    int width, height;
     // Load as RGBA 32-bit (75% of the memory is wasted, but default font is so small) because it is more likely to be compatible with user's existing shaders.
-    io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height, &bytes_per_pixel);
-
-    // Convert RGBA32 to BGRA32
-#ifndef IMGUI_USE_BGRA_PACKED_COLOR
-    if (io.Fonts->TexPixelsUseColors)
-    {
-        ImU32 *dst_start = (ImU32 *)ImGui::MemAlloc((size_t)width * height * bytes_per_pixel);
-        for (ImU32 *src = (ImU32 *)pixels, *dst = dst_start, *dst_end = dst_start + (size_t)width * height; dst < dst_end; src++, dst++)
-            *dst = IMGUI_COL_TO_ARGB(*src);
-        pixels = (unsigned char *)dst_start;
-    }
-#endif
+    io.Fonts->GetTexDataAsAlpha8(&pixels, &width, &height);
 
     // Upload texture to graphics system
     // (Bilinear sampling is required by default. Set 'io.Fonts->Flags |= ImFontAtlasFlags_NoBakedLines' or 'style.AntiAliasedLinesUseTex = false' to allow point/nearest sampling)
-    CKTexture *texture = (CKTexture *)context->CreateObject(CKCID_TEXTURE, "ImGuiFonts", CK_OBJECTCREATION_RENAME);
+    CKTexture *texture = (CKTexture *)context->CreateObject(CKCID_TEXTURE, (CKSTRING) "ImGuiFonts");
     if (texture == NULL)
         return false;
 
-    if (!texture->Create(width, height, bytes_per_pixel * 8))
+    if (!texture->Create(width, height))
     {
         context->DestroyObject(texture);
         return false;
@@ -276,7 +265,19 @@ bool ImGui_ImplCK2_CreateFontsTexture()
     CKBYTE *ptr = texture->LockSurfacePtr();
     if (ptr)
     {
-        memcpy(ptr, pixels, width * height * bytes_per_pixel);
+        CKDWORD colorDef = RGBAITOCOLOR(0xff, 0xff, 0xff, 0x00);
+        VxFillStructure(width * height, (CKBYTE *)ptr, 4, 4, &colorDef);
+
+        const unsigned char *src = pixels;
+        CKBYTE *alphaDest = (CKBYTE *)ptr + 3;
+        for (int i = 0; i < height; i++)
+        {
+            for (int j = 0; j < width; j++, alphaDest += 4)
+            {
+                *alphaDest = *src++;
+            }
+        }
+
         texture->ReleaseSurfacePtr();
     }
 
@@ -285,11 +286,6 @@ bool ImGui_ImplCK2_CreateFontsTexture()
     // Store our identifier
     io.Fonts->SetTexID((ImTextureID)(intptr_t)texture);
     bd->FontTexture = texture;
-
-#ifndef IMGUI_USE_BGRA_PACKED_COLOR
-    if (io.Fonts->TexPixelsUseColors)
-        ImGui::MemFree(pixels);
-#endif
 
     return true;
 }
@@ -318,7 +314,6 @@ void ImGui_ImplCK2_DestroyDeviceObjects()
 
 void ImGui_ImplCK2_NewFrame()
 {
-    ImGuiIO &io = ImGui::GetIO();
     ImGui_ImplCK2_Data *bd = ImGui_ImplCK2_GetBackendData();
     IM_ASSERT(bd != NULL && "Did you call ImGui_ImplCK2_Init()?");
 
